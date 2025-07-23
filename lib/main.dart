@@ -1,6 +1,7 @@
 import 'package:absen_kantor/kriteria_karyawan.dart';
 import 'package:absen_kantor/penilaian_karyawan.dart';
 import 'package:absen_kantor/rank_karyawan.dart' as Rank_karyawan;
+import 'package:absen_kantor/login.dart'; // Import file login
 import 'package:flutter/material.dart';
 import 'package:absen_kantor/dashboard.dart';
 
@@ -19,7 +20,12 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const MainScreen(),
+      // Mulai dari Login screen
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => const Login(),
+        '/main': (context) => const MainScreen(),
+      },
     );
   }
 }
@@ -40,9 +46,46 @@ class _MainScreenState extends State<MainScreen> {
     Rank_karyawan.Rank_karyawan(),
   ];
 
+  void _logout() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Logout'),
+          content: const Text('Apakah Anda yakin ingin logout?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.pushReplacementNamed(context, '/login');
+              },
+              child: const Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('SPK SAW Penilaian Karyawan'),
+        backgroundColor: Colors.blue[800],
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            onPressed: _logout,
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
+          ),
+        ],
+      ),
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
@@ -61,11 +104,11 @@ class _MainScreenState extends State<MainScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.assessment),
-            label: 'Penilaian_karyawan',
+            label: 'Penilaian',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.emoji_events),
-            label: 'Rank_karyawan',
+            label: 'Ranking',
           ),
         ],
       ),
