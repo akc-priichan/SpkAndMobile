@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:absen_kantor/repository/ranking.dart';
 
 class Rank_karyawan extends StatefulWidget {
   const Rank_karyawan({super.key});
@@ -9,80 +10,53 @@ class Rank_karyawan extends StatefulWidget {
 
 class _Rank_karyawanState extends State<Rank_karyawan> {
   // Data sample untuk demonstrasi
-  final List<EmployeeRanking> rankings = [
-    EmployeeRanking(
-      rank: 1,
-      name: "Ahmad Fauzi",
-      nip: "2021001",
-      kehadiran: 90,
-      sikap: 85,
-      kerajinan: 88,
-      kuantitas: 92,
-      kualitas: 87,
-      finalScore: 0.884,
-    ),
-    EmployeeRanking(
-      rank: 2,
-      name: "Siti Nurhaliza",
-      nip: "2021002",
-      kehadiran: 88,
-      sikap: 90,
-      kerajinan: 85,
-      kuantitas: 89,
-      kualitas: 91,
-      finalScore: 0.872,
-    ),
-    EmployeeRanking(
-      rank: 3,
-      name: "Budi Santoso",
-      nip: "2021003",
-      kehadiran: 85,
-      sikap: 87,
-      kerajinan: 90,
-      kuantitas: 86,
-      kualitas: 88,
-      finalScore: 0.865,
-    ),
-    EmployeeRanking(
-      rank: 4,
-      name: "Dewi Sartika",
-      nip: "2021004",
-      kehadiran: 87,
-      sikap: 83,
-      kerajinan: 86,
-      kuantitas: 88,
-      kualitas: 85,
-      finalScore: 0.858,
-    ),
-    EmployeeRanking(
-      rank: 5,
-      name: "Rizky Pratama",
-      nip: "2021005",
-      kehadiran: 82,
-      sikap: 88,
-      kerajinan: 84,
-      kuantitas: 85,
-      kualitas: 89,
-      finalScore: 0.847,
-    ),
-  ];
+  final List<EmployeeRanking> rankings = [];
+
+  bool _isLoading = false;
+
+  Future getRanking() async {
+    setState(() {
+      _isLoading = true;
+    });
+    var res = await RankingRepo.index();
+    if (res != false) {
+      print(res);
+      setState(() {
+        // Parse data and update rankings list
+        for (var item in res) {
+          rankings.add(
+            EmployeeRanking(
+              rank: item['ranking']['peringkat'],
+              name: item['karyawan']['nama'],
+              nip: item['karyawan']['nip'],
+              kedisiplinan: item['penilaian']['kedisiplinan'],
+              kerjasama: item['penilaian']['kerjasama'],
+              kreativitas: item['penilaian']['kreativitas'],
+              tanggungJawab: item['penilaian']['tanggung_jawab'],
+              kualitas: item['penilaian']['kualitas_kerja'],
+              finalScore: item['ranking']['nilai_saw'],
+            ),
+          );
+        }
+      });
+    }
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      getRanking();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text(
-          'Perangkingan Karyawan',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.blue[800],
-        elevation: 0,
-        centerTitle: true,
-      ),
       body: Column(
         children: [
           // Header Info
@@ -98,11 +72,7 @@ class _Rank_karyawanState extends State<Rank_karyawan> {
             ),
             child: const Column(
               children: [
-                Icon(
-                  Icons.trending_up,
-                  color: Colors.white,
-                  size: 48,
-                ),
+                Icon(Icons.trending_up, color: Colors.white, size: 48),
                 SizedBox(height: 10),
                 Text(
                   'Hasil Perangkingan',
@@ -114,10 +84,7 @@ class _Rank_karyawanState extends State<Rank_karyawan> {
                 ),
                 Text(
                   'Metode SAW (Simple Additive Weighting)',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
             ),
@@ -155,10 +122,10 @@ class _Rank_karyawanState extends State<Rank_karyawan> {
                   spacing: 8,
                   runSpacing: 4,
                   children: [
-                    _buildCriteriaChip('Kehadiran', Colors.blue),
-                    _buildCriteriaChip('Sikap/Etika', Colors.green),
-                    _buildCriteriaChip('Kerajinan', Colors.orange),
-                    _buildCriteriaChip('Kuantitas', Colors.purple),
+                    _buildCriteriaChip('Kedisiplinan', Colors.blue),
+                    _buildCriteriaChip('Kerjasama', Colors.green),
+                    _buildCriteriaChip('Kreativitas', Colors.orange),
+                    _buildCriteriaChip('Tanggung Jawab', Colors.purple),
                     _buildCriteriaChip('Kualitas', Colors.red),
                   ],
                 ),
@@ -168,14 +135,16 @@ class _Rank_karyawanState extends State<Rank_karyawan> {
 
           // Ranking List
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: rankings.length,
-              itemBuilder: (context, index) {
-                final employee = rankings[index];
-                return _buildRankingCard(employee);
-              },
-            ),
+            child: _isLoading
+                ? Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: rankings.length,
+                    itemBuilder: (context, index) {
+                      final employee = rankings[index];
+                      return _buildRankingCard(employee);
+                    },
+                  ),
           ),
         ],
       ),
@@ -281,14 +250,16 @@ class _Rank_karyawanState extends State<Rank_karyawan> {
 
                   // Final Score
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: rankColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      employee.finalScore.toStringAsFixed(3),
+                      employee.finalScore,
                       style: TextStyle(
                         color: rankColor,
                         fontWeight: FontWeight.bold,
@@ -305,12 +276,22 @@ class _Rank_karyawanState extends State<Rank_karyawan> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildScoreItem('Kehadiran', employee.kehadiran, Colors.blue),
-                  _buildScoreItem('Sikap', employee.sikap, Colors.green),
                   _buildScoreItem(
-                      'Kerajinan', employee.kerajinan, Colors.orange),
+                    'Kedisiplinan',
+                    employee.kedisiplinan,
+                    Colors.blue,
+                  ),
+                  _buildScoreItem('Sikap', employee.kerjasama, Colors.green),
                   _buildScoreItem(
-                      'Kuantitas', employee.kuantitas, Colors.purple),
+                    'Kreativitas',
+                    employee.kreativitas,
+                    Colors.orange,
+                  ),
+                  _buildScoreItem(
+                    'Tanggung Jawab',
+                    employee.tanggungJawab,
+                    Colors.purple,
+                  ),
                   _buildScoreItem('Kualitas', employee.kualitas, Colors.red),
                 ],
               ),
@@ -321,16 +302,10 @@ class _Rank_karyawanState extends State<Rank_karyawan> {
     );
   }
 
-  Widget _buildScoreItem(String label, int score, Color color) {
+  Widget _buildScoreItem(String label, String score, Color color) {
     return Column(
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
         const SizedBox(height: 4),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -373,22 +348,30 @@ class _Rank_karyawanState extends State<Rank_karyawan> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Nama: ${employee.name}',
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'Nama: ${employee.name}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             Text('NIP: ${employee.nip}'),
             const SizedBox(height: 16),
-            const Text('Nilai Kriteria:',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Nilai Kriteria:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
-            _buildDetailRow('Kehadiran', employee.kehadiran),
-            _buildDetailRow('Sikap/Etika', employee.sikap),
-            _buildDetailRow('Kerajinan', employee.kerajinan),
-            _buildDetailRow('Kuantitas', employee.kuantitas),
+            _buildDetailRow('Kedisiplinan', employee.kedisiplinan),
+            _buildDetailRow('Kerjasama', employee.kerjasama),
+            _buildDetailRow('Kreativitas', employee.kreativitas),
+            _buildDetailRow('Tanggung Jawab', employee.tanggungJawab),
             _buildDetailRow('Kualitas', employee.kualitas),
             const Divider(),
-            Text('Skor Akhir: ${employee.finalScore.toStringAsFixed(3)}',
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(
+              'Skor Akhir: ${employee.finalScore}',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
           ],
         ),
         actions: [
@@ -401,7 +384,7 @@ class _Rank_karyawanState extends State<Rank_karyawan> {
     );
   }
 
-  Widget _buildDetailRow(String label, int value) {
+  Widget _buildDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -422,8 +405,8 @@ class _Rank_karyawanState extends State<Rank_karyawan> {
         content: const Text(
           'Sistem Penunjang Keputusan (SPK) ini menggunakan metode SAW '
           '(Simple Additive Weighting) untuk menentukan ranking karyawan terbaik '
-          'berdasarkan 5 kriteria penilaian: Kehadiran, Sikap/Etika, Kerajinan, '
-          'Kuantitas, dan Kualitas kerja.',
+          'berdasarkan 5 kriteria penilaian: Kedisiplinan, Kerjasama, Kreativitas, '
+          'Tanggung Jawab, dan Kualitas kerja.',
         ),
         actions: [
           TextButton(
@@ -440,21 +423,21 @@ class EmployeeRanking {
   final int rank;
   final String name;
   final String nip;
-  final int kehadiran;
-  final int sikap;
-  final int kerajinan;
-  final int kuantitas;
-  final int kualitas;
-  final double finalScore;
+  final String kedisiplinan;
+  final String kerjasama;
+  final String kreativitas;
+  final String tanggungJawab;
+  final String kualitas;
+  final String finalScore;
 
   EmployeeRanking({
     required this.rank,
     required this.name,
     required this.nip,
-    required this.kehadiran,
-    required this.sikap,
-    required this.kerajinan,
-    required this.kuantitas,
+    required this.kedisiplinan,
+    required this.kerjasama,
+    required this.kreativitas,
+    required this.tanggungJawab,
     required this.kualitas,
     required this.finalScore,
   });

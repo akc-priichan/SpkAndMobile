@@ -1,3 +1,5 @@
+import 'package:absen_kantor/local_storage.dart';
+import 'package:absen_kantor/repository/auth_repository.dart';
 import 'package:flutter/material.dart';
 
 class Login extends StatefulWidget {
@@ -8,36 +10,54 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  void _login() {
+  Future<void> _login() async {
     // Validasi sederhana - Anda bisa customize sesuai kebutuhan
-    String username = _usernameController.text.trim();
+    String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
 
-    if (username.isEmpty || password.isEmpty) {
+    if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Username dan password harus diisi'),
+          content: Text('Email dan password harus diisi'),
           backgroundColor: Colors.red,
         ),
       );
-      return;
-    }
-
-    // Contoh validasi sederhana (ganti dengan logic autentikasi yang sebenarnya)
-    if (username == 'admin' && password == 'admin') {
-      // Navigasi ke MainScreen setelah login berhasil
-      Navigator.pushReplacementNamed(context, '/main');
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Username atau password salah'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      var req = {'email': email, 'password': password};
+
+      var res = await AuthRepo.login(req);
+
+      if (res) {
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/main');
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Email atau password salah'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
+  }
+
+  @override
+  initState() {
+    super.initState();
+    // Inisialisasi jika diperlukan
+    LocalStorageService.getUser().then((user) {
+      if (user['userId'] != null) {
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/main');
+        }
+      }
+    });
   }
 
   @override
@@ -51,11 +71,7 @@ class _LoginState extends State<Login> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Logo atau Title
-              Icon(
-                Icons.business,
-                size: 80,
-                color: Colors.blue[800],
-              ),
+              Icon(Icons.business, size: 80, color: Colors.blue[800]),
               const SizedBox(height: 24),
               Text(
                 'SPK SAW Penilaian Karyawan',
@@ -76,9 +92,9 @@ class _LoginState extends State<Login> {
                   child: Column(
                     children: [
                       TextField(
-                        controller: _usernameController,
+                        controller: _emailController,
                         decoration: const InputDecoration(
-                          labelText: 'Username',
+                          labelText: 'Email',
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.person),
                         ),
@@ -97,7 +113,9 @@ class _LoginState extends State<Login> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _login,
+                          onPressed: () {
+                            _login();
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue[800],
                             foregroundColor: Colors.white,
@@ -117,10 +135,7 @@ class _LoginState extends State<Login> {
               const SizedBox(height: 24),
               Text(
                 'Demo: Username: admin, Password: admin',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
             ],
           ),
@@ -131,7 +146,7 @@ class _LoginState extends State<Login> {
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }

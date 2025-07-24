@@ -1,9 +1,9 @@
-import 'package:absen_kantor/kriteria_karyawan.dart';
+import 'package:absen_kantor/karyawan.dart';
+import 'package:absen_kantor/local_storage.dart';
 import 'package:absen_kantor/penilaian_karyawan.dart';
 import 'package:absen_kantor/rank_karyawan.dart' as Rank_karyawan;
 import 'package:absen_kantor/login.dart'; // Import file login
 import 'package:flutter/material.dart';
-import 'package:absen_kantor/dashboard.dart';
 
 void main() {
   runApp(const MyApp());
@@ -41,9 +41,9 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
-    const Karyawan(),
+    const KaryawanPage(),
     const Penilaian_karyawan(),
-    Rank_karyawan.Rank_karyawan(),
+    const Rank_karyawan.Rank_karyawan(),
   ];
 
   void _logout() {
@@ -61,6 +61,7 @@ class _MainScreenState extends State<MainScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
+                LocalStorageService.clearUser();
                 Navigator.pushReplacementNamed(context, '/login');
               },
               child: const Text('Logout'),
@@ -98,10 +99,7 @@ class _MainScreenState extends State<MainScreen> {
         selectedItemColor: Colors.blue[800],
         unselectedItemColor: Colors.grey[600],
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Karyawan',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Karyawan'),
           BottomNavigationBarItem(
             icon: Icon(Icons.assessment),
             label: 'Penilaian',
